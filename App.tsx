@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -63,7 +63,7 @@ const RulesScreen = ({ navigation }: any) => {
 // 游戏设置页面
 const SettingsScreen = ({ navigation }: any) => {
   const [timeLimit, setTimeLimit] = React.useState(60);
-  const [wordCategory, setWordCategory] = React.useState('基础');
+  const [wordCategory, setWordCategory] = React.useState('随机');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -108,6 +108,15 @@ const SettingsScreen = ({ navigation }: any) => {
           <TouchableOpacity
             style={[
               styles.optionButton, 
+              wordCategory === '随机' && styles.selectedOption
+            ]}
+            onPress={() => setWordCategory('随机')}
+          >
+            <Text style={styles.optionText}>随机</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.optionButton, 
               wordCategory === '基础' && styles.selectedOption
             ]}
             onPress={() => setWordCategory('基础')}
@@ -122,15 +131,6 @@ const SettingsScreen = ({ navigation }: any) => {
             onPress={() => setWordCategory('进阶')}
           >
             <Text style={styles.optionText}>进阶</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              wordCategory === '自定义' && styles.selectedOption
-            ]}
-            onPress={() => setWordCategory('自定义')}
-          >
-            <Text style={styles.optionText}>自定义</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -160,46 +160,182 @@ const GameScreen = ({ route, navigation }: any) => {
   const { timeLimit, wordCategory } = route.params;
   const [score, setScore] = React.useState(0);
   const [currentTime, setCurrentTime] = React.useState(timeLimit);
-  const [currentWord, setCurrentWord] = React.useState('苹果');
+  const [currentWord, setCurrentWord] = React.useState<string>('');
+  const [correctWords, setCorrectWords] = React.useState<string[]>([]);
+  const [wrongWords, setWrongWords] = React.useState<string[]>([]);
+  const [usedWords, setUsedWords] = React.useState<string[]>([]);
+  const [isGameOver, setIsGameOver] = React.useState(false);
+  const [isGameStarted, setIsGameStarted] = React.useState(false);
   
+  // useRef用于保存不需要触发重渲染的数据
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const navigationRef = React.useRef(navigation);
+  const wordListRef = React.useRef<string[]>([]);
+  const gameDataRef = React.useRef({
+    score: 0,
+    correctWords: [] as string[],
+    wrongWords: [] as string[]
+  });
+
   // 模拟词库
   const basicWords = ['苹果', '电脑', '手机', '太阳', '月亮', '书本', '铅笔', '眼镜', '手表', '汽车'];
   const advancedWords = ['人工智能', '量子力学', '区块链', '虚拟现实', '元宇宙', '黑洞', '纳米技术', '基因编辑', '神经网络', '可再生能源'];
-  
-  // 根据类别选择词库
-  const wordList = wordCategory === '基础' ? basicWords : advancedWords;
-  
-  // 获取随机词语
-  const getRandomWord = () => {
-    const randomIndex = Math.floor(Math.random() * wordList.length);
-    return wordList[randomIndex];
-  };
-  
-  // 游戏计时器
+  const transportWords = ['自行车', '摩托车', '汽车', '火车', '飞机', '轮船', '地铁', '公交车', '出租车', '电动车'];
+  const movieWords = ['泰坦尼克号', '星球大战', '哈利波特', '复仇者联盟', '阿凡达', '疯狂动物城', '无间道', '寻梦环游记', '盗梦空间', '肖申克的救赎'];
+  const cityWords = ['北京', '上海', '纽约', '东京', '伦敦', '巴黎', '悉尼', '莫斯科', '罗马', '开罗'];
+
+  // 游戏初始化 - 只执行一次
   React.useEffect(() => {
+    console.log("游戏初始化");
+    
+    // 初始化词库
+    let words: string[] = [];
+    if (wordCategory === '基础') {
+      words = [...basicWords];
+    } else if (wordCategory === '进阶') {
+      words = [...advancedWords];
+    } else {
+      // 随机组合所有词库
+      words = [...basicWords, ...advancedWords, ...transportWords, ...movieWords, ...cityWords];
+    }
+    // 打乱顺序
+    wordListRef.current = words.sort(() => Math.random() - 0.5);
+    
+    // 选择第一个词
+    if (wordListRef.current.length > 0) {
+      const firstWord = wordListRef.current[0];
+      setCurrentWord(firstWord);
+      setUsedWords([firstWord]);
+    }
+
+    // 设置导航引用
+    navigationRef.current = navigation;
+    
+    // 标记游戏已开始
+    setIsGameStarted(true);
+
+    // 组件卸载时清理
+    return () => {
+      console.log("游戏组件卸载");
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  // 将最新的状态同步到ref - 这不会导致游戏结束
+  React.useEffect(() => {
+    gameDataRef.current = {
+      score,
+      correctWords,
+      wrongWords
+    };
+  }, [score, correctWords, wrongWords]);
+  
+  // 游戏计时器 - 只在游戏已开始且未结束时运行
+  React.useEffect(() => {
+    if (!isGameStarted || isGameOver) {
+      console.log("计时器条件不满足", {isGameStarted, isGameOver});
+      return;
+    }
+    
+    console.log("启动游戏计时器");
     const timer = setInterval(() => {
       setCurrentTime((prevTime: number) => {
+        console.log("当前时间:", prevTime);
         if (prevTime <= 1) {
+          console.log("时间到，游戏结束");
           clearInterval(timer);
-          navigation.navigate('Result', { score });
+          // 设置一个短暂延迟，确保状态更新完成
+          setTimeout(() => endGame(), 10);
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
     
-    return () => clearInterval(timer);
+    timerRef.current = timer;
+    
+    return () => {
+      console.log("清理计时器");
+      clearInterval(timer);
+    };
+  }, [isGameStarted, isGameOver]);
+  
+  // 游戏结束处理函数
+  const endGame = React.useCallback(() => {
+    console.log("执行endGame函数");
+    // 先设置游戏结束标志
+    setIsGameOver(true);
+    
+    // 使用setTimeout确保状态更新完成后再导航
+    timeoutRef.current = setTimeout(() => {
+      // 使用ref中保存的最新数据
+      const { score, correctWords, wrongWords } = gameDataRef.current;
+      
+      console.log("导航到结果页面", {score, correctWordsCount: correctWords.length, wrongWordsCount: wrongWords.length});
+      navigationRef.current.navigate('Result', {
+        score,
+        correctWords,
+        wrongWords
+      });
+    }, 300); // 增加延迟确保状态更新完成
   }, []);
   
   // 处理正确答案
   const handleCorrect = () => {
-    setScore(score + 1);
-    setCurrentWord(getRandomWord());
+    if (isGameOver) {
+      console.log("游戏已结束，忽略操作");
+      return;
+    }
+    
+    setScore(prevScore => {
+      const newScore = prevScore + 1;
+      gameDataRef.current.score = newScore;
+      return newScore;
+    });
+    
+    setCorrectWords(prevWords => {
+      const newCorrectWords = [...prevWords, currentWord];
+      gameDataRef.current.correctWords = newCorrectWords;
+      return newCorrectWords;
+    });
+    
+    const nextWord = getRandomWord();
+    setCurrentWord(nextWord);
+    setUsedWords(prevWords => [...prevWords, nextWord]);
   };
   
-  // 处理跳过
+  // 处理错误/跳过
   const handleSkip = () => {
-    setCurrentWord(getRandomWord());
+    if (isGameOver) return;
+    
+    setWrongWords(prevWords => {
+      const newWrongWords = [...prevWords, currentWord];
+      gameDataRef.current.wrongWords = newWrongWords;
+      return newWrongWords;
+    });
+    
+    const nextWord = getRandomWord();
+    setCurrentWord(nextWord);
+    setUsedWords(prevWords => [...prevWords, nextWord]);
+  };
+  
+  // 获取随机词语（确保不重复）
+  const getRandomWord = () => {
+    const availableWords = wordListRef.current.filter(word => !usedWords.includes(word));
+    
+    // 如果所有词都已使用，返回一个提示信息
+    if (availableWords.length === 0) {
+      return "词库已用完";
+    }
+    
+    const randomIndex = Math.floor(Math.random() * availableWords.length);
+    return availableWords[randomIndex];
   };
   
   return (
@@ -237,12 +373,56 @@ const GameScreen = ({ route, navigation }: any) => {
 
 // 结果页面
 const ResultScreen = ({ route, navigation }: any) => {
-  const { score } = route.params;
+  // 安全地从路由参数获取数据
+  const params = route.params || {};
+  const score = params.score || 0;
+  const correctWords = Array.isArray(params.correctWords) ? params.correctWords : [];
+  const wrongWords = Array.isArray(params.wrongWords) ? params.wrongWords : [];
+  
+  // 调试信息
+  console.log("结果页面收到数据:", { score, correctWords, wrongWords });
   
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>游戏结束</Text>
+      <Text style={styles.resultScoreLabel}>最终得分</Text>
       <Text style={styles.resultScore}>{score}</Text>
+      
+      <View style={styles.wordsListContainer}>
+        <ScrollView style={styles.scrollContainer}>
+          <View style={styles.wordsSection}>
+            <Text style={styles.wordsSectionTitle}>正确词语：</Text>
+            <View style={styles.wordsList}>
+              {correctWords.length > 0 ? (
+                correctWords.map((word: string, index: number) => (
+                  <View key={`correct-${index}`} style={styles.wordItem}>
+                    <Text style={styles.wordItemText}>{word}</Text>
+                    <Text style={styles.correctMark}>✓</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyListText}>无正确词语</Text>
+              )}
+            </View>
+          </View>
+          
+          <View style={styles.wordsSection}>
+            <Text style={styles.wordsSectionTitle}>错误词语：</Text>
+            <View style={styles.wordsList}>
+              {wrongWords.length > 0 ? (
+                wrongWords.map((word: string, index: number) => (
+                  <View key={`wrong-${index}`} style={styles.wordItem}>
+                    <Text style={styles.wordItemText}>{word}</Text>
+                    <Text style={styles.skipMark}>✗</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyListText}>无错误词语</Text>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+      </View>
       
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -426,13 +606,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   wordText: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   actionContainer: {
     flexDirection: 'row',
-    height: '35%',
+    height: '25%',
   },
   actionButton: {
     flex: 1,
@@ -446,15 +626,73 @@ const styles = StyleSheet.create({
     backgroundColor: '#e74c3c',
   },
   actionText: {
-    fontSize: 48,
+    fontSize: 36,
     color: '#ffffff',
   },
   
   // 结果页面
+  resultScoreLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 5,
+  },
   resultScore: {
     fontSize: 72,
     fontWeight: 'bold',
     color: '#f39c12',
-    marginBottom: 50,
+    marginBottom: 20,
+  },
+  wordsListContainer: {
+    width: '90%',
+    height: 300,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#eeeeee',
+    borderRadius: 8,
+  },
+  scrollContainer: {
+    flex: 1,
+    width: '100%',
+    padding: 10,
+  },
+  wordsSection: {
+    marginBottom: 15,
+  },
+  wordsSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 10,
+  },
+  wordsList: {
+    marginBottom: 15,
+  },
+  wordItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eeeeee',
+  },
+  wordItemText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  correctMark: {
+    fontSize: 16,
+    color: '#2ecc71',
+    fontWeight: 'bold',
+  },
+  skipMark: {
+    fontSize: 16,
+    color: '#e74c3c',
+    fontWeight: 'bold',
+  },
+  emptyListText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
   },
 });
