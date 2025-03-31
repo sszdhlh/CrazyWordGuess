@@ -1,85 +1,160 @@
-# 疯狂猜词
+# 疯狂猜词 (Crazy Word Guess)
 
-一个基于React Native和Expo开发的移动端猜词游戏应用。
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20Web-lightgrey.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## 应用介绍
+一款基于React Native与Expo构建的多人派对游戏应用，支持多种主题和难度的词语猜测游戏。
 
-疯狂猜词是一款多人参与的派对游戏应用。游戏中，一名玩家手持设备，屏幕上显示需要猜的词语，但持有者看不到。其他玩家通过语言或肢体动作描述该词语，持有者根据描述进行猜测。猜对后，持有者点击左半边区域表示正确；若放弃，则点击右半边区域表示跳过。每轮有时间限制，规定时间内猜对的词语数量越多，得分越高。
+<p align="center">
+  <img src="screenshots/game_preview.png" alt="游戏预览" width="300"/>
+</p>
 
-## 功能特点
+## 📖 项目简介
 
-- 简洁现代的UI设计，活泼有趣
-- 支持多种词库（随机、基础、进阶）
-- 可自定义游戏时长（30秒/60秒/90秒）
-- 游戏结束后显示得分和猜词统计
-- 支持猜对/跳过操作的实时反馈
-- 时间紧迫提醒功能
+"疯狂猜词"是一款适合团队建设和社交聚会的互动游戏。玩家轮流扮演猜词者，其他玩家通过语言或肢体动作描述屏幕上的词语，猜词者需要基于提示猜出正确答案。游戏集趣味性与挑战性于一体，提供沉浸式的多人游戏体验。
 
-## 技术栈
+## ✨ 核心功能
 
-- React Native
-- Expo
-- TypeScript
-- React Navigation
+- **丰富词库** - 400+精选词语，覆盖8大主题领域
+- **多级难度** - 支持基础、进阶和随机难度选择
+- **自定义时长** - 可选30/60/90秒游戏时长
+- **游戏控制** - 支持暂停/继续，可中途结束查看结果
+- **成绩统计** - 详细记录正确/错误词语列表
+- **排行系统** - 支持本地与在线排行榜，记录个人最佳成绩
 
-## 安装步骤
+## 🛠️ 技术架构
 
-1. 确保已安装Node.js和npm
-2. 安装Expo CLI：
-   ```
-   npm install -g expo-cli
-   ```
-3. 克隆项目仓库：
-   ```
-   git clone [仓库地址]
-   cd CrazyWordGuess
-   ```
-4. 安装项目依赖：
-   ```
-   npm install
-   ```
-5. 启动项目：
-   ```
-   npm start
-   ```
-   或者
-   ```
-   npx expo start
-   ```
+- **前端框架**: React Native
+- **开发工具**: Expo
+- **路由导航**: React Navigation
+- **开发语言**: TypeScript
+- **状态管理**: React Hooks
+- **数据存储**: 本地存储 + 模拟在线API
 
-## 使用方法
+## 📱 应用截图
 
-1. 在手机上安装Expo Go应用（[iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)）
-2. 启动Expo服务器后，使用Expo Go扫描控制台中显示的二维码
-3. 也可以使用以下命令直接在浏览器中运行：
-   ```
-   npm run web
-   ```
+<p align="center">
+  <img src="screenshots/welcome_screen.png" alt="欢迎页面" width="200"/>
+  <img src="screenshots/settings_screen.png" alt="设置页面" width="200"/>
+  <img src="screenshots/gameplay_screen.png" alt="游戏页面" width="200"/>
+  <img src="screenshots/results_screen.png" alt="结果页面" width="200"/>
+</p>
 
-## 游戏规则
+## 🚀 快速开始
 
-1. 一名玩家手持设备，屏幕上显示需要猜的词语，但持有者看不到
-2. 其他玩家通过语言或肢体动作描述该词语，持有者根据描述进行猜测
-3. 猜对后，持有者点击左半边区域表示正确；若放弃，则点击右半边区域表示跳过
-4. 每轮有时间限制，规定时间内猜对的词语数量越多，得分越高
+### 前置要求
 
-## 游戏界面
+- Node.js (v12.0+)
+- npm 或 yarn
+- Expo CLI
 
-1. **欢迎页面** - 包含游戏标题和两个按钮（开始游戏和规则说明）
-2. **规则说明页面** - 显示游戏规则，包含返回按钮
-3. **游戏设置页面** - 允许玩家选择时间限制和词库
-4. **游戏主界面** - 显示当前词语、倒计时和得分，并提供左右两个区域用于表示猜对和跳过
-5. **结果页面** - 显示最终得分和所有猜对/跳过的词语，并提供再玩一次和返回主菜单的选项
+### 安装步骤
 
-## 设计风格
+```bash
+# 克隆仓库
+git clone https://github.com/yourusername/CrazyWordGuess.git
 
-- 整体风格：简约现代，活泼有趣
-- 主色调：明亮的蓝色 (#3498db) 和橙色 (#f39c12)
-- 背景色：浅灰色 (#f5f5f5)
-- 字体：圆润无衬线字体，黑色文本 (#333333)，白色强调文本
-- 按钮样式：圆角矩形，有轻微阴影效果
-- 动画：简单流畅的过渡效果，轻量级反馈动画
+# 进入项目目录
+cd CrazyWordGuess
 
-## 许可证
+# 安装依赖
+npm install
+# 或
+yarn install
 
-MIT 
+# 启动开发服务器
+npm start
+# 或
+expo start
+```
+
+### 构建与部署
+
+```bash
+# Web版本构建
+npm run web-build
+
+# iOS构建
+expo build:ios
+
+# Android构建
+expo build:android
+```
+
+## 📋 游戏说明
+
+1. **游戏设置**:
+   - 选择游戏时长(30/60/90秒)
+   - 选择词库难度(随机/基础/进阶)
+   - 选择词库主题(全部/日常/科技/文学等)
+
+2. **游戏流程**:
+   - 一名玩家担任猜词者，持有设备但不查看屏幕
+   - 其他玩家看到屏幕上的词语，通过描述帮助猜词者
+   - 猜对点击"✓"，错误点击"✗"
+   - 计时结束或通过暂停菜单提前结束游戏
+
+3. **结果记录**:
+   - 查看本局游戏得分
+   - 浏览正确与错误的词语列表
+   - 输入名字保存成绩到排行榜
+   - 查看历史最佳成绩与全球排名
+
+## 🔄 最近更新
+
+### v1.0.0 (2023-05-20)
+
+- **游戏控制升级**:
+  - 新增游戏暂停/继续功能
+  - 支持中途结束并保存成绩
+  - 优化导航堆栈，解决返回逻辑混乱问题
+
+- **排行榜系统**:
+  - 实现玩家名称注册与成绩保存
+  - 添加本地/在线排行榜切换功能
+  - 按分数高低智能排序与展示
+
+- **内容扩充**:
+  - 词库总量扩充至400+
+  - 新增流行语与网络梗词库
+  - 实现基于主题的词库过滤
+
+## 🤝 参与贡献
+
+欢迎参与本项目的开发和改进！
+
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📝 开发计划
+
+- [ ] 添加多人在线对战功能
+- [ ] 实现自定义词库创建与分享
+- [ ] 增加音效与动画效果
+- [ ] 支持深色模式
+- [ ] 添加成就系统
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+## 👥 团队成员
+
+- **开发者** - [Yixin(Charles) Zhang](https://github.com/sszdhlh)
+- **设计师** - Claude & Yixin(Charles) Zhang
+
+## 🙏 致谢
+
+- 感谢所有为项目提供反馈和建议的用户
+- [React Native 社区](https://reactnative.dev/)
+- [Expo 团队](https://expo.dev/)
+
+---
+
+<p align="center">
+  Made with ❤️ for word game enthusiasts
+</p> 
