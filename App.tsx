@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 定义排行榜记录类型
 type LeaderboardRecord = {
@@ -15,8 +16,7 @@ type LeaderboardRecord = {
   words: number;
 };
 
-// 使用全局变量存储排行榜数据（替代AsyncStorage）
-const globalLeaderboard: LeaderboardRecord[] = [];
+const LEADERBOARD_STORAGE_KEY = '@crazy_word_guess_leaderboard';
 
 // 欢迎页面组件
 const WelcomeScreen = ({ navigation }: any) => {
@@ -751,7 +751,7 @@ const ResultScreen = ({ route, navigation }: any) => {
   };
   
   // 保存分数到排行榜
-  const saveScore = () => {
+  const saveScore = async () => {
     if (!playerName.trim()) {
       Alert.alert('请输入名字', '请输入您的名字以保存成绩');
       return;
@@ -770,16 +770,28 @@ const ResultScreen = ({ route, navigation }: any) => {
         words: correctWords.length
       };
       
-      // 添加新记录到全局变量
-      globalLeaderboard.push(newRecord);
+      // 获取现有排行榜数据
+      const storedData = await AsyncStorage.getItem(LEADERBOARD_STORAGE_KEY);
+      let leaderboard: LeaderboardRecord[] = [];
+      
+      if (storedData) {
+        leaderboard = JSON.parse(storedData);
+      }
+      
+      // 添加新记录
+      leaderboard.push(newRecord);
       
       // 按分数排序（从高到低）
-      globalLeaderboard.sort((a, b) => b.score - a.score);
+      leaderboard.sort((a, b) => b.score - a.score);
       
       // 只保留前10名
-      if (globalLeaderboard.length > 10) {
-        globalLeaderboard.splice(10);
+      if (leaderboard.length > 10) {
+        leaderboard.splice(10);
       }
+      
+      // 保存更新后的排行榜
+      await AsyncStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(leaderboard));
+      console.log('保存的排行榜数据:', leaderboard); // 调试信息
       
       setSavedToLeaderboard(true);
       Alert.alert('保存成功', '您的分数已成功保存到排行榜！');
@@ -894,7 +906,6 @@ const ResultScreen = ({ route, navigation }: any) => {
 // 排行榜页面
 const LeaderboardScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
-  // 本地和在线排行榜数据
   const [localLeaderboard, setLocalLeaderboard] = React.useState<LeaderboardRecord[]>([]);
   const [onlineLeaderboard, setOnlineLeaderboard] = React.useState<LeaderboardRecord[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -904,20 +915,33 @@ const LeaderboardScreen = ({ navigation }: any) => {
   React.useEffect(() => {
     const loadLeaderboards = async () => {
       try {
-        // 使用全局变量中的排行榜数据
-        setLocalLeaderboard([...globalLeaderboard]);
+        // 加载本地排行榜
+        const storedData = await AsyncStorage.getItem(LEADERBOARD_STORAGE_KEY);
+        console.log('读取的本地排行榜数据:', storedData);
         
-        // 模拟数据
+        let localData: LeaderboardRecord[] = [];
+        if (storedData) {
+          localData = JSON.parse(storedData);
+        }
+        setLocalLeaderboard(localData);
+
+        // 模拟在线排行榜数据（包含本地数据）
         const fakeOnlineData: LeaderboardRecord[] = [
-          { name: '玩家A', score: 28, date: new Date().toISOString(), words: 28 },
-          { name: '玩家B', score: 25, date: new Date().toISOString(), words: 25 },
-          { name: '玩家C', score: 22, date: new Date().toISOString(), words: 22 },
-          { name: '玩家D', score: 20, date: new Date().toISOString(), words: 20 },
-          { name: '玩家E', score: 18, date: new Date().toISOString(), words: 18 },
+          { name: '玩家小A', score: 28, date: new Date().toISOString(), words: 28 },
+          { name: '玩家小B', score: 25, date: new Date().toISOString(), words: 25 },
+          { name: '玩家小C', score: 22, date: new Date().toISOString(), words: 22 },
+          { name: '玩家小D', score: 20, date: new Date().toISOString(), words: 20 },
+          { name: '玩家小E', score: 18, date: new Date().toISOString(), words: 18 },
         ];
-        setOnlineLeaderboard(fakeOnlineData);
+
+        // 合并本地和在线数据
+        const combinedData = [...localData, ...fakeOnlineData];
+        // 按分数排序
+        combinedData.sort((a, b) => b.score - a.score);
+        setOnlineLeaderboard(combinedData);
       } catch (error) {
         console.error('加载排行榜数据出错:', error);
+        Alert.alert('加载失败', '加载排行榜数据时发生错误');
       } finally {
         setIsLoading(false);
       }
@@ -925,11 +949,6 @@ const LeaderboardScreen = ({ navigation }: any) => {
     
     loadLeaderboards();
   }, []);
-  
-  // 切换排行榜显示
-  const toggleLeaderboard = () => {
-    setShowOnline(!showOnline);
-  };
   
   // 格式化日期显示
   const formatDate = (dateString: string) => {
@@ -939,7 +958,7 @@ const LeaderboardScreen = ({ navigation }: any) => {
   
   return (
     <LinearGradient
-      colors={['#8A2BE2', '#4169E1']} // 从紫色到蓝色的渐变
+      colors={['#8A2BE2', '#4169E1']}
       style={styles.gradientContainer}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -947,63 +966,76 @@ const LeaderboardScreen = ({ navigation }: any) => {
       <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
         <Text style={styles.pageTitle}>排行榜</Text>
         
-        <View style={styles.leaderboardToggle}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton, 
-              !showOnline && styles.toggleButtonActive
-            ]}
-            onPress={() => setShowOnline(false)}
-          >
-            <Text style={[
-              styles.toggleButtonText,
-              !showOnline && styles.toggleButtonTextActive
-            ]}>本地排行</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton, 
-              showOnline && styles.toggleButtonActive
-            ]}
-            onPress={() => setShowOnline(true)}
-          >
-            <Text style={[
-              styles.toggleButtonText,
-              showOnline && styles.toggleButtonTextActive
-            ]}>在线排行</Text>
-          </TouchableOpacity>
+        <View style={styles.contentCard}>
+          <View style={styles.leaderboardToggle}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                !showOnline && styles.toggleButtonActive
+              ]}
+              onPress={() => setShowOnline(false)}
+            >
+              <Text style={[
+                styles.toggleButtonText,
+                !showOnline && styles.toggleButtonTextActive
+              ]}>本地排行</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                showOnline && styles.toggleButtonActive
+              ]}
+              onPress={() => setShowOnline(true)}
+            >
+              <Text style={[
+                styles.toggleButtonText,
+                showOnline && styles.toggleButtonTextActive
+              ]}>全球排行</Text>
+            </TouchableOpacity>
+          </View>
+
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#ffffff" style={{ marginVertical: 30 }} />
+          ) : (
+            <View style={styles.leaderboardContent}>
+              <View style={styles.leaderboardHeader}>
+                <Text style={[styles.headerText, { flex: 0.2 }]}>排名</Text>
+                <Text style={[styles.headerText, { flex: 0.35 }]}>玩家</Text>
+                <Text style={[styles.headerText, { flex: 0.25 }]}>得分</Text>
+                <Text style={[styles.headerText, { flex: 0.2 }]}>时间</Text>
+              </View>
+              
+              <ScrollView style={styles.leaderboardList}>
+                {(showOnline ? onlineLeaderboard : localLeaderboard).length > 0 ? (
+                  (showOnline ? onlineLeaderboard : localLeaderboard).map((record, index) => (
+                    <View key={index} style={styles.leaderboardItem}>
+                      <Text style={[styles.leaderboardItemText, { flex: 0.2 }]}>{index + 1}</Text>
+                      <Text style={[styles.leaderboardItemText, { flex: 0.35 }]} numberOfLines={1} ellipsizeMode="tail">
+                        {record.name}
+                      </Text>
+                      <Text style={[styles.leaderboardItemText, { flex: 0.25 }]}>{record.score}</Text>
+                      <Text style={[styles.leaderboardItemText, { flex: 0.2, fontSize: 12 }]}>
+                        {formatDate(record.date)}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyLeaderboard}>
+                    <Text style={styles.emptyLeaderboardText}>
+                      {showOnline ? '暂无全球排行数据' : '暂无本地排行数据'}
+                    </Text>
+                    <Text style={styles.emptyLeaderboardSubText}>
+                      {showOnline ? '正在同步数据...' : '快来玩一局，创造记录吧！'}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          )}
         </View>
         
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#ffffff" style={{marginVertical: 30}} />
-        ) : (
-          <View style={styles.contentCard}>
-            <View style={styles.leaderboardHeader}>
-              <Text style={[styles.leaderboardHeaderText, { flex: 0.2 }]}>排名</Text>
-              <Text style={[styles.leaderboardHeaderText, { flex: 0.35 }]}>玩家</Text>
-              <Text style={[styles.leaderboardHeaderText, { flex: 0.25 }]}>分数</Text>
-              <Text style={[styles.leaderboardHeaderText, { flex: 0.2 }]}>时间</Text>
-            </View>
-            
-            <ScrollView style={styles.leaderboardList}>
-              {(showOnline ? onlineLeaderboard : localLeaderboard).length > 0 ? (
-                (showOnline ? onlineLeaderboard : localLeaderboard).map((record, index) => (
-                  <View key={index} style={styles.leaderboardItem}>
-                    <Text style={[styles.leaderboardItemText, { flex: 0.2 }]}>{index + 1}</Text>
-                    <Text style={[styles.leaderboardItemText, { flex: 0.35 }]} numberOfLines={1} ellipsizeMode="tail">{record.name}</Text>
-                    <Text style={[styles.leaderboardItemText, { flex: 0.25 }]}>{record.score}</Text>
-                    <Text style={[styles.leaderboardItemText, { flex: 0.2, fontSize: 12 }]}>{formatDate(record.date)}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyLeaderboardText}>暂无排行数据</Text>
-              )}
-            </ScrollView>
-          </View>
-        )}
-        
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)', width: '80%' }]}
+          style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)', width: '80%', marginTop: 20 }]}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.buttonText}>返回</Text>
@@ -1083,16 +1115,12 @@ const styles = StyleSheet.create({
   },
   // 内容卡片
   contentCard: {
-    width: '95%',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15,
+    padding: 15,
+    width: '90%',
+    flex: 1,
+    marginVertical: 20,
   },
   // 按钮容器
   buttonContainer: {
@@ -1316,12 +1344,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   // 排行榜样式
+  leaderboardContent: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginTop: 10,
+  },
   leaderboardToggle: {
     flexDirection: 'row',
-    width: '95%',
+    width: '100%',
     borderRadius: 25,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -1336,7 +1372,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(52, 152, 219, 0.9)',
   },
   toggleButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: '#ffffff',
     opacity: 0.7,
@@ -1348,38 +1384,51 @@ const styles = StyleSheet.create({
   },
   leaderboardHeader: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(52, 152, 219, 0.5)',
     paddingVertical: 12,
     paddingHorizontal: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
+    marginBottom: 5,
   },
-  leaderboardHeaderText: {
-    fontSize: 16,
+  headerText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#ffffff',
+    textAlign: 'center',
   },
   leaderboardList: {
     flex: 1,
   },
   leaderboardItem: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    alignItems: 'center',
+    paddingVertical: 14,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
   },
   leaderboardItemText: {
     fontSize: 16,
     color: '#ffffff',
+    textAlign: 'center',
+  },
+  emptyLeaderboard: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 30,
   },
   emptyLeaderboardText: {
-    padding: 20,
+    fontSize: 20,
+    color: '#ffffff',
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  emptyLeaderboardSubText: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.6)',
-    fontStyle: 'italic',
+    textAlign: 'center',
   },
   // 名称输入
   nameInputContainer: {
