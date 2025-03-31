@@ -1,8 +1,11 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ScrollView, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // 定义排行榜记录类型
 type LeaderboardRecord = {
@@ -17,247 +20,322 @@ const globalLeaderboard: LeaderboardRecord[] = [];
 
 // 欢迎页面组件
 const WelcomeScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  
   return (
-    <SafeAreaView style={styles.welcomeContainer}>
-      <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>疯狂猜词</Text>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#f39c12' }]}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <Text style={styles.buttonText}>开始游戏</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#5dade2' }]}
-          onPress={() => navigation.navigate('Rules')}
-        >
-          <Text style={styles.buttonText}>规则说明</Text>
-        </TouchableOpacity>
-      </View>
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <LinearGradient
+      colors={['#8A2BE2', '#4169E1']} // 从紫色(BlueViolet)到蓝色(RoyalBlue)的渐变
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
+        <Text style={styles.title}>疯狂猜词</Text>
+        <Text style={styles.subtitle}>一起来玩吧！</Text>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(243, 156, 18, 0.9)' }]}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.buttonText}>开始游戏</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)' }]}
+            onPress={() => navigation.navigate('Rules')}
+          >
+            <Text style={styles.buttonText}>规则说明</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(155, 89, 182, 0.9)' }]}
+            onPress={() => navigation.navigate('Leaderboard')}
+          >
+            <Text style={styles.buttonText}>查看排行榜</Text>
+          </TouchableOpacity>
+        </View>
+        <StatusBar style="light" />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
-// 规则说明页面
+// 规则页面组件
 const RulesScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
+  
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>游戏规则</Text>
-      <View style={styles.rulesContainer}>
-        <Text style={styles.ruleText}>
-          1. 一名玩家手持设备，屏幕上显示需要猜的词语，但持有者看不到。
-        </Text>
-        <Text style={styles.ruleText}>
-          2. 其他玩家通过语言或肢体动作描述该词语，持有者根据描述进行猜测。
-        </Text>
-        <Text style={styles.ruleText}>
-          3. 猜对后，持有者点击左半边区域表示正确；若放弃，则点击右半边区域表示跳过。
-        </Text>
-        <Text style={styles.ruleText}>
-          4. 每轮有时间限制，规定时间内猜对的词语数量越多，得分越高。
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#7f8c8d', width: '80%' }]}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.buttonText}>返回</Text>
-      </TouchableOpacity>
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <LinearGradient
+      colors={['#8A2BE2', '#4169E1']} // 从紫色到蓝色的渐变
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
+        <Text style={styles.pageTitle}>游戏规则</Text>
+        
+        <View style={styles.contentCard}>
+          <Text style={styles.ruleText}>1. 游戏需要至少两名玩家参与，一人拿设备，其他人描述。</Text>
+          <Text style={styles.ruleText}>2. 拿设备的玩家看不到屏幕，其他玩家通过语言描述帮助猜词。</Text>
+          <Text style={styles.ruleText}>3. 描述时不能直接说出词语本身或包含的字。</Text>
+          <Text style={styles.ruleText}>4. 猜对一个词得1分，猜错不扣分。</Text>
+          <Text style={styles.ruleText}>5. 时间结束后，统计总分，得分最高者获胜。</Text>
+        </View>
+        
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)' }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.buttonText}>返回</Text>
+        </TouchableOpacity>
+        
+        <StatusBar style="light" />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 // 游戏设置页面
 const SettingsScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const [timeLimit, setTimeLimit] = React.useState(60);
   const [wordCategory, setWordCategory] = React.useState('随机');
   const [wordTheme, setWordTheme] = React.useState('全部');
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>游戏设置</Text>
-      
-      <View style={styles.settingSection}>
-        <Text style={styles.settingTitle}>时间设置</Text>
-        <View style={styles.optionsRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              timeLimit === 30 && styles.selectedOption
-            ]}
-            onPress={() => setTimeLimit(30)}
-          >
-            <Text style={styles.optionText}>30秒</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              timeLimit === 60 && styles.selectedOption
-            ]}
-            onPress={() => setTimeLimit(60)}
-          >
-            <Text style={styles.optionText}>60秒</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              timeLimit === 90 && styles.selectedOption
-            ]}
-            onPress={() => setTimeLimit(90)}
-          >
-            <Text style={styles.optionText}>90秒</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      
-      <View style={styles.settingSection}>
-        <Text style={styles.settingTitle}>词库难度</Text>
-        <View style={styles.optionsRow}>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              wordCategory === '随机' && styles.selectedOption
-            ]}
-            onPress={() => setWordCategory('随机')}
-          >
-            <Text style={styles.optionText}>随机</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              wordCategory === '基础' && styles.selectedOption
-            ]}
-            onPress={() => setWordCategory('基础')}
-          >
-            <Text style={styles.optionText}>基础</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.optionButton, 
-              wordCategory === '进阶' && styles.selectedOption
-            ]}
-            onPress={() => setWordCategory('进阶')}
-          >
-            <Text style={styles.optionText}>进阶</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.settingSection}>
-        <Text style={styles.settingTitle}>词库主题</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.themeScrollView}>
-          <View style={styles.themeOptionsRow}>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '全部' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('全部')}
-            >
-              <Text style={styles.optionText}>全部</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '日常' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('日常')}
-            >
-              <Text style={styles.optionText}>日常</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '科技' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('科技')}
-            >
-              <Text style={styles.optionText}>科技</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '文学' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('文学')}
-            >
-              <Text style={styles.optionText}>文学</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '流行语' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('流行语')}
-            >
-              <Text style={styles.optionText}>流行语</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '网络梗' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('网络梗')}
-            >
-              <Text style={styles.optionText}>网络梗</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '地理' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('地理')}
-            >
-              <Text style={styles.optionText}>地理</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '影视' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('影视')}
-            >
-              <Text style={styles.optionText}>影视</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.optionButton, 
-                wordTheme === '交通' && styles.selectedOption
-              ]}
-              onPress={() => setWordTheme('交通')}
-            >
-              <Text style={styles.optionText}>交通</Text>
-            </TouchableOpacity>
+    <LinearGradient
+      colors={['#8A2BE2', '#4169E1']} // 从紫色到蓝色的渐变
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
+        <Text style={styles.pageTitle}>游戏设置</Text>
+        
+        <View style={styles.contentCard}>
+          <View style={styles.settingSection}>
+            <Text style={styles.settingTitle}>时间设置</Text>
+            <View style={styles.optionsRow}>
+              <TouchableOpacity
+                style={[
+                  styles.optionButton, 
+                  timeLimit === 30 && styles.optionButtonSelected
+                ]}
+                onPress={() => setTimeLimit(30)}
+              >
+                <Text style={[
+                  styles.optionText,
+                  timeLimit === 30 && styles.optionTextSelected
+                ]}>30秒</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.optionButton, 
+                  timeLimit === 60 && styles.optionButtonSelected
+                ]}
+                onPress={() => setTimeLimit(60)}
+              >
+                <Text style={[
+                  styles.optionText,
+                  timeLimit === 60 && styles.optionTextSelected
+                ]}>60秒</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.optionButton, 
+                  timeLimit === 90 && styles.optionButtonSelected
+                ]}
+                onPress={() => setTimeLimit(90)}
+              >
+                <Text style={[
+                  styles.optionText,
+                  timeLimit === 90 && styles.optionTextSelected
+                ]}>90秒</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </ScrollView>
-      </View>
-      
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#f39c12', width: '80%' }]}
-          onPress={() => navigation.navigate('Game', { timeLimit, wordCategory, wordTheme })}
-        >
-          <Text style={styles.buttonText}>开始游戏</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#7f8c8d', width: '80%' }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.buttonText}>返回</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <StatusBar style="auto" />
-    </SafeAreaView>
+          
+          <View style={styles.settingSection}>
+            <Text style={styles.settingTitle}>词库难度</Text>
+            <View style={styles.optionsRow}>
+              <TouchableOpacity
+                style={[
+                  styles.optionButton, 
+                  wordCategory === '随机' && styles.optionButtonSelected
+                ]}
+                onPress={() => setWordCategory('随机')}
+              >
+                <Text style={[
+                  styles.optionText,
+                  wordCategory === '随机' && styles.optionTextSelected
+                ]}>随机</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.optionButton, 
+                  wordCategory === '基础' && styles.optionButtonSelected
+                ]}
+                onPress={() => setWordCategory('基础')}
+              >
+                <Text style={[
+                  styles.optionText,
+                  wordCategory === '基础' && styles.optionTextSelected
+                ]}>基础</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.optionButton, 
+                  wordCategory === '进阶' && styles.optionButtonSelected
+                ]}
+                onPress={() => setWordCategory('进阶')}
+              >
+                <Text style={[
+                  styles.optionText,
+                  wordCategory === '进阶' && styles.optionTextSelected
+                ]}>进阶</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.settingSection}>
+            <Text style={styles.settingTitle}>词库主题</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.themeScrollView}>
+              <View style={styles.themeOptionsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '全部' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('全部')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '全部' && styles.optionTextSelected
+                  ]}>全部</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '日常' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('日常')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '日常' && styles.optionTextSelected
+                  ]}>日常</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '科技' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('科技')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '科技' && styles.optionTextSelected
+                  ]}>科技</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '文学' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('文学')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '文学' && styles.optionTextSelected
+                  ]}>文学</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '流行语' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('流行语')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '流行语' && styles.optionTextSelected
+                  ]}>流行语</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '网络梗' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('网络梗')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '网络梗' && styles.optionTextSelected
+                  ]}>网络梗</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '地理' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('地理')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '地理' && styles.optionTextSelected
+                  ]}>地理</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '影视' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('影视')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '影视' && styles.optionTextSelected
+                  ]}>影视</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.optionButton, 
+                    wordTheme === '交通' && styles.optionButtonSelected
+                  ]}
+                  onPress={() => setWordTheme('交通')}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    wordTheme === '交通' && styles.optionTextSelected
+                  ]}>交通</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+        
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(243, 156, 18, 0.9)' }]}
+            onPress={() => navigation.navigate('Game', { timeLimit, wordCategory, wordTheme })}
+          >
+            <Text style={styles.buttonText}>开始游戏</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)' }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.buttonText}>返回</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <StatusBar style="light" />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 // 游戏主界面
 const GameScreen = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const { timeLimit, wordCategory, wordTheme } = route.params;
   const [score, setScore] = React.useState(0);
   const [currentTime, setCurrentTime] = React.useState(timeLimit);
@@ -564,66 +642,78 @@ const GameScreen = ({ route, navigation }: any) => {
   };
   
   return (
-    <SafeAreaView style={styles.gameContainer}>
-      <View style={styles.gameHeader}>
-        <Text style={[styles.timerText, currentTime <= 10 && styles.timerWarning]}>
-          {currentTime}
-        </Text>
-        <Text style={styles.scoreText}>得分: {score}</Text>
-        <TouchableOpacity
-          style={styles.pauseButton}
-          onPress={togglePause}
-        >
-          <Text style={styles.pauseButtonText}>{isPaused ? "继续" : "暂停"}</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {isPaused ? (
-        <View style={styles.pauseMenu}>
-          <Text style={styles.pauseTitle}>游戏暂停</Text>
-          <TouchableOpacity
-            style={[styles.pauseMenuButton, {backgroundColor: '#2ecc71'}]}
-            onPress={togglePause}
-          >
-            <Text style={styles.pauseMenuButtonText}>继续游戏</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.pauseMenuButton, {backgroundColor: '#e74c3c'}]}
-            onPress={exitToResultScreen}
-          >
-            <Text style={styles.pauseMenuButtonText}>结束游戏</Text>
-          </TouchableOpacity>
+    <LinearGradient
+      colors={['#8A2BE2', '#4169E1']} // 从紫色到蓝色的渐变
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
+        <View style={styles.gameHeaderContainer}>
+          <View style={styles.gameHeader}>
+            <Text style={[styles.timerText, currentTime <= 10 && styles.timerWarning]}>
+              {currentTime}
+            </Text>
+            <Text style={styles.scoreText}>得分: {score}</Text>
+            <TouchableOpacity
+              style={styles.pauseButton}
+              onPress={togglePause}
+            >
+              <Text style={styles.pauseButtonText}>{isPaused ? "继续" : "暂停"}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ) : (
-        <>
-          <View style={styles.wordContainer}>
-            <Text style={styles.wordText}>{currentWord}</Text>
-          </View>
-          
-          <View style={styles.actionContainer}>
+        
+        {isPaused ? (
+          <View style={styles.pauseMenu}>
+            <Text style={styles.pauseTitle}>游戏暂停</Text>
             <TouchableOpacity
-              style={[styles.actionButton, styles.correctButton]}
-              onPress={handleCorrect}
+              style={[styles.pauseMenuButton, {backgroundColor: 'rgba(46, 204, 113, 0.9)'}]}
+              onPress={togglePause}
             >
-              <Text style={styles.actionText}>✓</Text>
+              <Text style={styles.pauseMenuButtonText}>继续游戏</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionButton, styles.skipButton]}
-              onPress={handleSkip}
+              style={[styles.pauseMenuButton, {backgroundColor: 'rgba(231, 76, 60, 0.9)'}]}
+              onPress={exitToResultScreen}
             >
-              <Text style={styles.actionText}>✗</Text>
+              <Text style={styles.pauseMenuButtonText}>结束游戏</Text>
             </TouchableOpacity>
           </View>
-        </>
-      )}
-      
-      <StatusBar style="auto" />
-    </SafeAreaView>
+        ) : (
+          <>
+            <View style={styles.wordContainer}>
+              <View style={styles.wordCard}>
+                <Text style={styles.wordText}>{currentWord}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.actionContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.correctButton]}
+                onPress={handleCorrect}
+              >
+                <Text style={styles.actionText}>✓</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.skipButton]}
+                onPress={handleSkip}
+              >
+                <Text style={styles.actionText}>✗</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+        
+        <StatusBar style="light" />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 // 结果页面
 const ResultScreen = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
   // 安全地从路由参数获取数据
   const params = route.params || {};
   const score = params.score || 0;
@@ -702,99 +792,108 @@ const ResultScreen = ({ route, navigation }: any) => {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>游戏结束</Text>
-      <Text style={styles.resultScoreLabel}>最终得分</Text>
-      <Text style={styles.resultScore}>{score}</Text>
-      
-      {!savedToLeaderboard && (
-        <View style={styles.nameInputContainer}>
-          <Text style={styles.nameInputLabel}>输入您的名字保存成绩：</Text>
-          <TextInput
-            style={styles.nameInput}
-            value={playerName}
-            onChangeText={setPlayerName}
-            placeholder="请输入名字"
-            maxLength={10}
-          />
+    <LinearGradient
+      colors={['#8A2BE2', '#4169E1']} // 从紫色到蓝色的渐变
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
+        <Text style={styles.pageTitle}>游戏结束</Text>
+        <Text style={styles.resultScoreLabel}>最终得分</Text>
+        <Text style={styles.resultScore}>{score}</Text>
+        
+        {!savedToLeaderboard && (
+          <View style={styles.nameInputContainer}>
+            <Text style={styles.nameInputLabel}>输入您的名字保存成绩：</Text>
+            <TextInput
+              style={styles.nameInput}
+              value={playerName}
+              onChangeText={setPlayerName}
+              placeholder="请输入名字"
+              maxLength={10}
+              placeholderTextColor="rgba(255, 255, 255, 0.6)"
+            />
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: 'rgba(39, 174, 96, 0.9)', width: '80%' }]}
+              onPress={saveScore}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonText}>保存成绩</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        <View style={styles.wordsListContainer}>
+          <ScrollView style={styles.scrollContainer}>
+            <View style={styles.wordsSection}>
+              <Text style={styles.wordsSectionTitle}>正确词语：</Text>
+              <View style={styles.wordsList}>
+                {correctWords.length > 0 ? (
+                  correctWords.map((word: string, index: number) => (
+                    <View key={`correct-${index}`} style={styles.wordItem}>
+                      <Text style={styles.wordItemText}>{word}</Text>
+                      <Text style={styles.correctMark}>✓</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>无正确词语</Text>
+                )}
+              </View>
+            </View>
+            
+            <View style={styles.wordsSection}>
+              <Text style={styles.wordsSectionTitle}>错误词语：</Text>
+              <View style={styles.wordsList}>
+                {wrongWords.length > 0 ? (
+                  wrongWords.map((word: string, index: number) => (
+                    <View key={`wrong-${index}`} style={styles.wordItem}>
+                      <Text style={styles.wordItemText}>{word}</Text>
+                      <Text style={styles.skipMark}>✗</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>无错误词语</Text>
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+        
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: '#27ae60', width: '80%' }]}
-            onPress={saveScore}
-            disabled={isSaving}
+            style={[styles.button, { backgroundColor: 'rgba(243, 156, 18, 0.9)', width: '80%' }]}
+            onPress={playAgain}
           >
-            {isSaving ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>保存成绩</Text>
-            )}
+            <Text style={styles.buttonText}>再玩一次</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)', width: '80%' }]}
+            onPress={backToMainMenu}
+          >
+            <Text style={styles.buttonText}>返回主菜单</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: 'rgba(155, 89, 182, 0.9)', width: '80%' }]}
+            onPress={viewLeaderboard}
+          >
+            <Text style={styles.buttonText}>查看排行榜</Text>
           </TouchableOpacity>
         </View>
-      )}
-      
-      <View style={styles.wordsListContainer}>
-        <ScrollView style={styles.scrollContainer}>
-          <View style={styles.wordsSection}>
-            <Text style={styles.wordsSectionTitle}>正确词语：</Text>
-            <View style={styles.wordsList}>
-              {correctWords.length > 0 ? (
-                correctWords.map((word: string, index: number) => (
-                  <View key={`correct-${index}`} style={styles.wordItem}>
-                    <Text style={styles.wordItemText}>{word}</Text>
-                    <Text style={styles.correctMark}>✓</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyListText}>无正确词语</Text>
-              )}
-            </View>
-          </View>
-          
-          <View style={styles.wordsSection}>
-            <Text style={styles.wordsSectionTitle}>错误词语：</Text>
-            <View style={styles.wordsList}>
-              {wrongWords.length > 0 ? (
-                wrongWords.map((word: string, index: number) => (
-                  <View key={`wrong-${index}`} style={styles.wordItem}>
-                    <Text style={styles.wordItemText}>{word}</Text>
-                    <Text style={styles.skipMark}>✗</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyListText}>无错误词语</Text>
-              )}
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-      
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#f39c12', width: '80%' }]}
-          onPress={playAgain}
-        >
-          <Text style={styles.buttonText}>再玩一次</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#3498db', width: '80%' }]}
-          onPress={backToMainMenu}
-        >
-          <Text style={styles.buttonText}>返回主菜单</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#9b59b6', width: '80%' }]}
-          onPress={viewLeaderboard}
-        >
-          <Text style={styles.buttonText}>查看排行榜</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <StatusBar style="auto" />
-    </SafeAreaView>
+        
+        <StatusBar style="light" />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 // 排行榜页面
 const LeaderboardScreen = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
   // 本地和在线排行榜数据
   const [localLeaderboard, setLocalLeaderboard] = React.useState<LeaderboardRecord[]>([]);
   const [onlineLeaderboard, setOnlineLeaderboard] = React.useState<LeaderboardRecord[]>([]);
@@ -839,73 +938,80 @@ const LeaderboardScreen = ({ navigation }: any) => {
   };
   
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>排行榜</Text>
-      
-      <View style={styles.leaderboardToggle}>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton, 
-            !showOnline && styles.toggleButtonActive
-          ]}
-          onPress={() => setShowOnline(false)}
-        >
-          <Text style={[
-            styles.toggleButtonText,
-            !showOnline && styles.toggleButtonTextActive
-          ]}>本地排行</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton, 
-            showOnline && styles.toggleButtonActive
-          ]}
-          onPress={() => setShowOnline(true)}
-        >
-          <Text style={[
-            styles.toggleButtonText,
-            showOnline && styles.toggleButtonTextActive
-          ]}>在线排行</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {isLoading ? (
-        <ActivityIndicator size="large" color="#3498db" style={{marginVertical: 30}} />
-      ) : (
-        <View style={styles.leaderboardContainer}>
-          <View style={styles.leaderboardHeader}>
-            <Text style={[styles.leaderboardHeaderText, { flex: 0.2 }]}>排名</Text>
-            <Text style={[styles.leaderboardHeaderText, { flex: 0.35 }]}>玩家</Text>
-            <Text style={[styles.leaderboardHeaderText, { flex: 0.25 }]}>分数</Text>
-            <Text style={[styles.leaderboardHeaderText, { flex: 0.2 }]}>时间</Text>
-          </View>
-          
-          <ScrollView style={styles.leaderboardList}>
-            {(showOnline ? onlineLeaderboard : localLeaderboard).length > 0 ? (
-              (showOnline ? onlineLeaderboard : localLeaderboard).map((record, index) => (
-                <View key={index} style={styles.leaderboardItem}>
-                  <Text style={[styles.leaderboardItemText, { flex: 0.2 }]}>{index + 1}</Text>
-                  <Text style={[styles.leaderboardItemText, { flex: 0.35 }]} numberOfLines={1} ellipsizeMode="tail">{record.name}</Text>
-                  <Text style={[styles.leaderboardItemText, { flex: 0.25 }]}>{record.score}</Text>
-                  <Text style={[styles.leaderboardItemText, { flex: 0.2, fontSize: 12 }]}>{formatDate(record.date)}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyLeaderboardText}>暂无排行数据</Text>
-            )}
-          </ScrollView>
+    <LinearGradient
+      colors={['#8A2BE2', '#4169E1']} // 从紫色到蓝色的渐变
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
+        <Text style={styles.pageTitle}>排行榜</Text>
+        
+        <View style={styles.leaderboardToggle}>
+          <TouchableOpacity
+            style={[
+              styles.toggleButton, 
+              !showOnline && styles.toggleButtonActive
+            ]}
+            onPress={() => setShowOnline(false)}
+          >
+            <Text style={[
+              styles.toggleButtonText,
+              !showOnline && styles.toggleButtonTextActive
+            ]}>本地排行</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.toggleButton, 
+              showOnline && styles.toggleButtonActive
+            ]}
+            onPress={() => setShowOnline(true)}
+          >
+            <Text style={[
+              styles.toggleButtonText,
+              showOnline && styles.toggleButtonTextActive
+            ]}>在线排行</Text>
+          </TouchableOpacity>
         </View>
-      )}
-      
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#7f8c8d', width: '80%' }]}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.buttonText}>返回</Text>
-      </TouchableOpacity>
-      
-      <StatusBar style="auto" />
-    </SafeAreaView>
+        
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#ffffff" style={{marginVertical: 30}} />
+        ) : (
+          <View style={styles.contentCard}>
+            <View style={styles.leaderboardHeader}>
+              <Text style={[styles.leaderboardHeaderText, { flex: 0.2 }]}>排名</Text>
+              <Text style={[styles.leaderboardHeaderText, { flex: 0.35 }]}>玩家</Text>
+              <Text style={[styles.leaderboardHeaderText, { flex: 0.25 }]}>分数</Text>
+              <Text style={[styles.leaderboardHeaderText, { flex: 0.2 }]}>时间</Text>
+            </View>
+            
+            <ScrollView style={styles.leaderboardList}>
+              {(showOnline ? onlineLeaderboard : localLeaderboard).length > 0 ? (
+                (showOnline ? onlineLeaderboard : localLeaderboard).map((record, index) => (
+                  <View key={index} style={styles.leaderboardItem}>
+                    <Text style={[styles.leaderboardItemText, { flex: 0.2 }]}>{index + 1}</Text>
+                    <Text style={[styles.leaderboardItemText, { flex: 0.35 }]} numberOfLines={1} ellipsizeMode="tail">{record.name}</Text>
+                    <Text style={[styles.leaderboardItemText, { flex: 0.25 }]}>{record.score}</Text>
+                    <Text style={[styles.leaderboardItemText, { flex: 0.2, fontSize: 12 }]}>{formatDate(record.date)}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyLeaderboardText}>暂无排行数据</Text>
+              )}
+            </ScrollView>
+          </View>
+        )}
+        
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: 'rgba(52, 152, 219, 0.9)', width: '80%' }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.buttonText}>返回</Text>
+        </TouchableOpacity>
+        
+        <StatusBar style="light" />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -915,64 +1021,91 @@ const Stack = createStackNavigator();
 // 主应用组件
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Welcome"
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: false, // 禁用手势返回功能，避免导航问题
-        }}
-      >
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Rules" component={RulesScreen} options={{ gestureEnabled: true }} />
-        <Stack.Screen name="Settings" component={SettingsScreen} options={{ gestureEnabled: true }} />
-        <Stack.Screen name="Game" component={GameScreen} />
-        <Stack.Screen name="Result" component={ResultScreen} />
-        <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="Welcome"
+          screenOptions={{
+            headerShown: false,
+            gestureEnabled: false, // 禁用手势返回功能，避免导航问题
+          }}
+        >
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Rules" component={RulesScreen} options={{ gestureEnabled: true }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ gestureEnabled: true }} />
+          <Stack.Screen name="Game" component={GameScreen} />
+          <Stack.Screen name="Result" component={ResultScreen} />
+          <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 
 // 样式
 const styles = StyleSheet.create({
-  // 通用容器样式
-  container: {
+  // 渐变背景容器
+  gradientContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: 20,
   },
-  
-  // 欢迎页面
-  welcomeContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoContainer: {
-    marginBottom: 60,
-  },
-  logoText: {
+  // 主标题
+  title: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#3498db',
+    color: '#ffffff',
+    marginBottom: 15,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
+  // 副标题
+  subtitle: {
+    fontSize: 24,
+    color: '#ffffff',
+    marginBottom: 50,
+    opacity: 0.9,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  // 页面标题（非主页）
+  pageTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  // 内容卡片
+  contentCard: {
+    width: '95%',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  // 按钮容器
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
   },
+  // 按钮样式
   button: {
-    width: '80%',
+    width: '70%',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 30,
     marginVertical: 10,
     alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -982,101 +1115,106 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  // 按钮文字
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  
-  // 规则页面
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#3498db',
-    marginBottom: 30,
-  },
-  rulesContainer: {
-    width: '90%',
-    marginBottom: 40,
-  },
+  // 规则文本
   ruleText: {
     fontSize: 16,
-    color: '#333333',
-    marginBottom: 16,
+    color: '#ffffff',
+    marginBottom: 15,
     lineHeight: 24,
   },
-  
-  // 设置页面
+  // 设置部分
   settingSection: {
-    width: '90%',
-    marginBottom: 30,
+    width: '100%',
+    marginBottom: 25,
   },
+  // 设置标题
   settingTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 15,
+    color: '#ffffff',
+    marginBottom: 12,
   },
+  // 选项行
   optionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
   },
+  // 选项按钮
+  optionButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10,
+    marginBottom: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  // 选中的选项按钮
+  optionButtonSelected: {
+    backgroundColor: 'rgba(52, 152, 219, 0.9)',
+    borderColor: '#ffffff',
+  },
+  // 选项文字
+  optionText: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  // 选中的选项文字
+  optionTextSelected: {
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+  // 主题滚动视图
   themeScrollView: {
     width: '100%',
     marginBottom: 10,
   },
+  // 主题选项行
   themeOptionsRow: {
     flexDirection: 'row',
     paddingVertical: 5,
   },
-  optionButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#3498db',
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  selectedOption: {
-    backgroundColor: '#f39c12',
-    borderColor: '#f39c12',
-  },
-  optionText: {
-    color: '#333333',
-    fontWeight: '500',
-  },
-  
-  // 游戏页面
-  gameContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
+  // 游戏容器相关样式
+  gameHeaderContainer: {
+    width: '100%',
+    paddingTop: 20,
   },
   gameHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    marginHorizontal: 10,
   },
   timerText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#e74c3c',
+    color: '#ffffff',
   },
   timerWarning: {
-    opacity: 0.8,
+    color: '#e74c3c',
   },
   scoreText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#f39c12',
+    color: '#ffffff',
   },
   pauseButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: 'rgba(52, 152, 219, 0.9)',
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderRadius: 5,
+    borderRadius: 20,
   },
   pauseButtonText: {
     color: '#ffffff',
@@ -1090,15 +1228,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   pauseTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#3498db',
+    color: '#ffffff',
     marginBottom: 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   pauseMenuButton: {
     width: '100%',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 30,
     marginVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1120,133 +1261,70 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#3498db',
-    margin: 20,
-    borderRadius: 12,
+    paddingHorizontal: 20,
+  },
+  wordCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 30,
+    minWidth: '80%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   wordText: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#2c3e50',
+    textAlign: 'center',
   },
   actionContainer: {
     flexDirection: 'row',
-    height: '25%',
+    height: 120,
+    marginBottom: 20,
   },
   actionButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    margin: 8,
+    borderRadius: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   correctButton: {
-    backgroundColor: '#2ecc71',
+    backgroundColor: 'rgba(46, 204, 113, 0.9)',
   },
   skipButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: 'rgba(231, 76, 60, 0.9)',
   },
   actionText: {
-    fontSize: 36,
+    fontSize: 40,
+    fontWeight: 'bold',
     color: '#ffffff',
   },
-  
-  // 结果页面
-  resultScoreLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  resultScore: {
-    fontSize: 72,
-    fontWeight: 'bold',
-    color: '#f39c12',
-    marginBottom: 20,
-  },
-  wordsListContainer: {
-    width: '90%',
-    height: 300,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#eeeeee',
-    borderRadius: 8,
-  },
-  scrollContainer: {
-    flex: 1,
-    width: '100%',
-    padding: 10,
-  },
-  wordsSection: {
-    marginBottom: 15,
-  },
-  wordsSectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 10,
-  },
-  wordsList: {
-    marginBottom: 15,
-  },
-  wordItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
-  },
-  wordItemText: {
-    fontSize: 16,
-    color: '#333333',
-  },
-  correctMark: {
-    fontSize: 16,
-    color: '#2ecc71',
-    fontWeight: 'bold',
-  },
-  skipMark: {
-    fontSize: 16,
-    color: '#e74c3c',
-    fontWeight: 'bold',
-  },
-  emptyListText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    fontStyle: 'italic',
-  },
-  
-  // 玩家名称输入
-  nameInputContainer: {
-    width: '90%',
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  nameInputLabel: {
-    fontSize: 16,
-    color: '#333333',
-    marginBottom: 8,
-  },
-  nameInput: {
-    width: '80%',
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#dddddd',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    fontSize: 16,
-    marginBottom: 10,
-    backgroundColor: '#ffffff',
-  },
-  
   // 排行榜样式
   leaderboardToggle: {
     flexDirection: 'row',
-    width: '90%',
-    borderRadius: 8,
+    width: '95%',
+    borderRadius: 25,
     overflow: 'hidden',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#3498db',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   toggleButton: {
     flex: 1,
@@ -1255,37 +1333,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleButtonActive: {
-    backgroundColor: '#3498db',
+    backgroundColor: 'rgba(52, 152, 219, 0.9)',
   },
   toggleButtonText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#3498db',
+    color: '#ffffff',
+    opacity: 0.7,
   },
   toggleButtonTextActive: {
     color: '#ffffff',
-  },
-  leaderboardContainer: {
-    width: '90%',
-    height: 350,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#eeeeee',
-    borderRadius: 8,
-    overflow: 'hidden',
+    opacity: 1,
+    fontWeight: '700',
   },
   leaderboardHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f8f8f8',
-    paddingVertical: 10,
+    backgroundColor: 'rgba(52, 152, 219, 0.5)',
+    paddingVertical: 12,
     paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
   leaderboardHeaderText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#ffffff',
   },
   leaderboardList: {
     flex: 1,
@@ -1295,18 +1367,118 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
   },
   leaderboardItemText: {
     fontSize: 16,
-    color: '#333333',
+    color: '#ffffff',
   },
   emptyLeaderboardText: {
     padding: 20,
     textAlign: 'center',
     fontSize: 16,
-    color: '#7f8c8d',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontStyle: 'italic',
+  },
+  // 名称输入
+  nameInputContainer: {
+    width: '95%',
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  nameInputLabel: {
+    fontSize: 16,
+    color: '#ffffff',
+    marginBottom: 8,
+  },
+  nameInput: {
+    width: '80%',
+    height: 45,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    marginBottom: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: '#ffffff',
+  },
+  wordsListContainer: {
+    width: '95%',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: 15,
+    flex: 1,
+    marginBottom: 20,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  wordsSection: {
+    marginBottom: 20,
+  },
+  wordsSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  wordsList: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 10,
+  },
+  wordItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  wordItemText: {
+    fontSize: 18,
+    color: '#ffffff',
+  },
+  correctMark: {
+    color: '#2ecc71',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  skipMark: {
+    color: '#e74c3c',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  emptyListText: {
+    padding: 10,
+    textAlign: 'center',
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontStyle: 'italic',
+  },
+  // 结果页面样式
+  resultScoreLabel: {
+    fontSize: 20,
+    color: '#ffffff',
+    marginBottom: 5,
+    opacity: 0.9,
+  },
+  resultScore: {
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
+  },
+  // 安全区域容器
+  safeAreaContainer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
